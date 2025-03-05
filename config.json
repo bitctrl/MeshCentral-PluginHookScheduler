@@ -1,0 +1,18 @@
+{
+  "name": "Plugin Hook Scheduler",
+  "shortName": "pluginhookscheduler",
+  "version": "0.0.0-draft+20251031",
+  "author": "Daniel Hammerschmidt",
+  "description": "Schedule plugin hook invocation order to resolve dependencies",
+  "hasAdminPanel": false,
+  "homepage": "https://github.com/bitctrl/MeshCentral-PluginHookScheduler",
+  "changelogUrl": "https://raw.githubusercontent.com/bitctrl/MeshCentral-PluginHookScheduler/main/changelog.md",
+  "configUrl": "https://raw.githubusercontent.com/bitctrl/MeshCentral-PluginHookScheduler/main/config.json",
+  "downloadUrl": "https://github.com/bitctrl/MeshCentral-PluginHookScheduler/archive/main.zip",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitctrl/MeshCentral-PluginHookScheduler.git"
+  },
+  "versionHistoryUrl": "https://github.com/bitctrl/MeshCentral-PluginHookScheduler/tags",
+  "meshCentralCompat": ">=1.1.36"
+}
