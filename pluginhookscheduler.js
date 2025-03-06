@@ -6,23 +6,37 @@
  * 
  * @author  Daniel Hammerschmidt <daniel.hammerschmidt@bitctrl.de>
  * @author  Daniel Hammerschmidt <daniel@redneck-engineering.com>
- * @version 0.0.0-draft+20251031
+ * @version 0.0.0-draft+20251041
  *********************************************************************/
 
-const hooksMap = new Map();
+function getPluginShortName(dirname) {
+  return dirname.split(require('node:path').sep).pop();
+}
 
-function PluginHandler_firstHookInvocation(hookName, hooksMap) {
-  let config;
-  config = this.parent.config.settings.plugins;
-  const pluginSettings = config.pluginsettings ?? (config.pluginsettings = {});
-  config = pluginSettings.pluginhookscheduler ?? (pluginSettings.pluginhookscheduler = {});
-  if (Array.isArray(config)) {
-    config = pluginSettings.pluginhookscheduler = Object.assign({}, Object.fromEntries(config));
+function getPluginConfig(pluginHandler, pluginShortName) {
+  const pluginsConfig = pluginHandler.parent.config.settings.plugins;
+  const pluginSettings = pluginsConfig.pluginsettings ?? (pluginsConfig.pluginsettings = {});
+  return pluginSettings[pluginShortName] ?? (pluginSettings[pluginShortName] = {});
+}
+
+const PLUGIN_SHORT_NAME = getPluginShortName(__dirname);
+
+const boundHooks = new Map();
+
+function PluginHandler_firstHookInvocation(hookName) {
+  const config = getPluginConfig(this, PLUGIN_SHORT_NAME);
+  if (Array.isArray(config.backendhooks)) {
+    // don't try-catch, check mesherrors.txt
+    config.backendhooks = Object.assign({}, Object.fromEntries(config.backendhooks));
   }
   const hooks = new Set();
   const plugins = new Map(Object.entries(this.plugins).filter(([_, plugin]) => (typeof plugin[hookName] === 'function')));
-  const schedule = (config[hookName] ?? config['*'] ?? [])
-    .filter((name) => (plugins.has(name)))
+  const schedule = (config.backendhooks[hookName] ?? config.backendhooks['*'] ?? [])
+    .filter((name) => {
+      if (plugins.has(name)) { return true; }
+      console.warn(`Scheduled plugin "${name}" is not installed or has no handler for "${hookName}".`);
+      return false;
+    })
     .map((name) => ([name, plugins.get(name)]));
   for (const [name, obj] of schedule) {
     const hook = obj[hookName].bind(obj);
@@ -35,14 +49,15 @@ function PluginHandler_firstHookInvocation(hookName, hooksMap) {
     hook.pluginName = name;
     hooks.add(hook);
   }
+  // called once, don't store
   if (!(hookName === 'server_startup' || hookName === 'hook_setupHttpHandlers')) {
-    hooksMap.set(hookName, hooks);
+    boundHooks.set(hookName, hooks);
   }
   return hooks;
 }
 
 function wrap_PlugHandler_callHook(hookName, ...args) {
-  const hooks = hooksMap.get(hookName) ?? PluginHandler_firstHookInvocation.call(this, hookName, hooksMap);
+  const hooks = boundHooks.get(hookName) ?? PluginHandler_firstHookInvocation.call(this, hookName);
   for (const boundHook of hooks) {
     try {
       boundHook(...args);
@@ -53,8 +68,10 @@ function wrap_PlugHandler_callHook(hookName, ...args) {
 }
 
 module.exports = {
-  pluginhookscheduler: function (pluginHandler) {
+  [PLUGIN_SHORT_NAME]: function (pluginHandler) {
     pluginHandler.callHook = wrap_PlugHandler_callHook.bind(pluginHandler);
     return {};
   },
+  getPluginShortName,
+  getPluginConfig,
 };

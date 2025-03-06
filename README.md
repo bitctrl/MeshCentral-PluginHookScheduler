@@ -2,6 +2,8 @@
 
 **Currently this is a draft**
 
+see [Plugin Hooks](https://github.com/Ylianst/MeshCentral/blob/master/docs/docs/meshcentral/plugins.md#plugin-hooks) in the documentation.
+
 ## `meshcentral-data/config.json`
 ```json
 {
@@ -10,14 +12,19 @@
     "plugins": {
       "enabled": true,
       "pluginSettings": {
-        "pluginhookscheduler": [
-          ["server_startup", ["routeplus"]],
-          ["hook_setupHttpHandlers", []],
-          ["hook_userLoggedIn", []],
-          ["hook_processAgentData", []],
-          ["hook_agentCoreIsStable", []],
-          ["*", ["devtools", "pingpong"]]
-        ]
+        "pluginhookscheduler": {
+          "backendhooks": [
+            ["server_startup", ["routeplus", "pingpong"]],
+            ["hook_setupHttpHandlers", ["not-installed"]],
+            ["# hook_userLoggedIn", []],
+            ["# hook_processAgentData", []],
+            ["# hook_agentCoreIsStable", []],
+            ["*", ["devtools", "pingpong"]]
+          ],
+          "webuihooks": [
+            ["#", ["NOT IMPLEMENTED YET"]]
+          ]
+        }
       }
     }
   }
