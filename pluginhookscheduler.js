@@ -6,7 +6,7 @@
  * 
  * @author  Daniel Hammerschmidt <daniel.hammerschmidt@bitctrl.de>
  * @author  Daniel Hammerschmidt <daniel@redneck-engineering.com>
- * @version 0.0.1
+ * @version 0.0.1+wip
  *********************************************************************/
 
 const { sep: PATH_SEP } = require('node:path');
@@ -37,7 +37,7 @@ function getPluginConfig(pluginShortName, defaultConfigGenerator) {
   return config;
 }
 
-function requirePluginHooks(...hooks) {
+function requirePluginHooks(hooks) {
   for (let hook of hooks) {
     try { pluginConfig.backendhooks[hook].length; } catch (error) { error.message = `Enable ${hooks.join(', ')}! ${error.message}`; throw error; }
   }
