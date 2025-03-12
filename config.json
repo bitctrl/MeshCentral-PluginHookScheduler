@@ -1,7 +1,7 @@
 {
   "name": "Plugin Hook Scheduler",
   "shortName": "pluginhookscheduler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Daniel Hammerschmidt",
   "description": "Schedule plugin hook invocation order to resolve dependencies",
   "hasAdminPanel": false,

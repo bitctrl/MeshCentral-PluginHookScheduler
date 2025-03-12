@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.2] - 2025-03-12
+### Added
+- pluginHandler.wrapFunctionCall() to define hooks in other plugins
+### Changed
+- minor changes
+
 ## [0.0.1] - 2025-03-10
 ### Added
 - Custom hooks to wrap internal functions

@@ -3,7 +3,6 @@
 const {
   nop,
   IIFE,
-  objectFromNull,
   /* --- */
   getPluginShortName,
   getPluginConfig,
@@ -21,8 +20,7 @@ module.exports = function ({
   return {
     PLUGIN_SHORT_NAME,
     pluginConfig,
-  nop,
-  IIFE,
-  objectFromNull,
-}
+    nop,
+    IIFE,
+  }
 };

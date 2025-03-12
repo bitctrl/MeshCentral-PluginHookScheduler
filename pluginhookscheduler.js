@@ -6,16 +6,14 @@
  * 
  * @author  Daniel Hammerschmidt <daniel.hammerschmidt@bitctrl.de>
  * @author  Daniel Hammerschmidt <daniel@redneck-engineering.com>
- * @version 0.0.1+wip
+ * @version 0.0.2
  *********************************************************************/
 
 const { sep: PATH_SEP } = require('node:path');
 
-function nop() {};
-function pass(value) { return value; }
+function nop() {}
 // ["Immediately Invoked Function Expression" with arguments first](https://developer.mozilla.org/en-US/docs/Glossary/IIFE)
 function IIFE(/* ...args, */ iife) { return (iife = arguments[arguments.length - 1]), iife.apply(this, Array.prototype.slice.call(arguments, 0, arguments.length - 1)); };
-const objectFromNull = Object.create(null);
 
 const { mcConfig, mcPackageJson } = IIFE(function() {
   const mcPath = require.main.path;
@@ -82,7 +80,7 @@ function PluginHandler_firstHookInvocation(hookName) {
   return hooks;
 }
 
-function wrap_PlugHandler_callHook(hookName, ...args) {
+function wrap_PluginHandler_callHook(hookName, ...args) {
   const hooks = boundHooks.get(hookName) ?? PluginHandler_firstHookInvocation.call(this, hookName);
   for (const boundHook of hooks) {
     try {
@@ -98,24 +96,29 @@ let meshserver, webserver;
 module.exports = {
   [PLUGIN_SHORT_NAME]: function (pluginHandler) {
     meshserver = pluginHandler.parent;
-    pluginHandler.callHook = wrap_PlugHandler_callHook.bind(pluginHandler);
+    const hooks = new Set(Object.keys(pluginConfig.backendhooks).filter((name) => (name.startsWith('hook_'))));
+    
+    function wrapFunctionCall(targetObject, targetFunctionName, hookNameAlias = targetFunctionName) {
+      function mkhook(name, fn) { return hooks.has(name) ? pluginHandler.callHook.bind(null, name) : fn; }
+      if (hooks.has('hook_before' + hookNameAlias) || hooks.has('hook_after' + targetFunctionName)) {
+        const before = mkhook('hook_before' + hookNameAlias, nop);
+        const target = targetObject[targetFunctionName];
+        const after = mkhook('hook_after' + hookNameAlias, nop);
+        targetObject[targetFunctionName] = function () {
+          before.apply(targetObject, arguments);
+          const result = target.apply(targetObject, arguments);
+          after.call(targetObject, result, ...arguments);
+          return result;
+        }
+      }  
+    }
+
+    pluginHandler.callHook = wrap_PluginHandler_callHook.bind(pluginHandler);
+    pluginHandler.wrapFunctionCall = wrapFunctionCall;
+
     return {
       server_startup: function () {
         webserver = meshserver.webserver;
-        const hooks = new Set(Object.keys(pluginConfig.backendhooks).filter((name) => (name.startsWith('hook_'))));
-        function wrapFunctionCall(targetObject, targetFunctionName) {
-          function mkhook(name, v) { return hooks.has(name) ? pluginHandler.callHook.bind(null, name) : v; }
-          if (hooks.has('hook_before' + targetFunctionName) || hooks.has('hook_after' + targetFunctionName)) {
-            const before = mkhook('hook_before' + targetFunctionName, nop);
-            const target = targetObject[targetFunctionName];
-            const after = mkhook('hook_after' + targetFunctionName, pass);
-            targetObject[targetFunctionName] = function () {
-              before.apply(targetObject, arguments);
-              return after.call(targetObject, target.apply(targetObject, arguments), ...arguments);
-            }
-  
-          }  
-        }
         wrapFunctionCall(webserver.meshAgentHandler, 'CreateMeshAgent');
         wrapFunctionCall(webserver.meshRelayHandler, 'CreateMeshRelay');
         wrapFunctionCall(webserver.meshRelayHandler, 'CreateLocalRelay');
@@ -126,7 +129,6 @@ module.exports = {
   },
   nop,
   IIFE,
-  objectFromNull,
   getPluginShortName,
   getPluginConfig,
   requirePluginHooks,
